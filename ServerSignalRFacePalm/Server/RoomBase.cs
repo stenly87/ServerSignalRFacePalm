@@ -31,9 +31,9 @@ namespace ServerSignalRFacePalm.Server
 
         internal async Task AddRoundActionAsync(RoomAction action, IHubCallerClients clients)
         {
-            if (!rooms.TryGetValue(groupId, out Room room))
+            if (!rooms.TryGetValue(action.GroupId, out Room room))
             {
-                Console.WriteLine($"Команты {groupId} не существует");
+                Console.WriteLine($"Команты {action.GroupId} не существует");
                 return;
             }
             if (!room.PlayerState.ContainsKey(action.Actor))
