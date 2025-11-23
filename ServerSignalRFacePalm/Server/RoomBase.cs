@@ -30,6 +30,10 @@ namespace ServerSignalRFacePalm.Server
         internal async Task AddRoundActionAsync(RoomAction action, IHubCallerClients clients)
         {
             Console.WriteLine("Добавление действия: проверка хп");
+            if (!rooms.ContainsKey(action.GroupId))
+                ;
+            if (!rooms[action.GroupId].PlayerState.ContainsKey(action.Actor))
+                ;
             if (rooms[action.GroupId].PlayerState[action.Actor].HP <= 0)
                 return;
             Console.WriteLine("Добавление действия: проверка на повторное действие");
@@ -101,8 +105,10 @@ namespace ServerSignalRFacePalm.Server
             if (rooms[groupId].PlayerState.Count(s => s.Value.HP > 0) > 1)
                 await clients.Group(groupId).SendAsync("StartRound", rooms[groupId]);
             else
+            {
                 await clients.Group(groupId).SendAsync("Winner", rooms[groupId].PlayerState.FirstOrDefault(s => s.Value.HP > 0).Value);
-            rooms.Remove(groupId);
+                rooms.Remove(groupId);
+            }
         }
 
         internal bool Ready(string groupId)
