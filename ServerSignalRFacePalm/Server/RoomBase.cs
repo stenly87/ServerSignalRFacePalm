@@ -17,7 +17,9 @@ namespace ServerSignalRFacePalm.Server
             if (last == null)
             {
                 last = new Room { Number = Guid.NewGuid().ToString().ToLower() };
-                rooms.Add(last.Number, last);
+                rooms.Add(last.Number, last);                
+                defenceActions.Add(last.Number, new());
+                attackActions.Add(last.Number, new());
             }
             result = last.Number;
             last.PlayerState.Add(player.Name, player);
@@ -29,19 +31,19 @@ namespace ServerSignalRFacePalm.Server
 
         internal async Task AddRoundActionAsync(RoomAction action, IHubCallerClients clients)
         {
-            Console.WriteLine("Добавление действия: проверка хп");
-            if (!rooms.ContainsKey(action.GroupId))
-                ;
-            if (!rooms[action.GroupId].PlayerState.ContainsKey(action.Actor))
-                ;
-            if (rooms[action.GroupId].PlayerState[action.Actor].HP <= 0)
-                return;
-            Console.WriteLine("Добавление действия: проверка на повторное действие");
-            if (!defenceActions.ContainsKey(action.GroupId))
+            if (!rooms.TryGetValue(groupId, out Room room))
             {
-                defenceActions.Add(action.GroupId, new());
-                attackActions.Add(action.GroupId, new());
+                Console.WriteLine($"Команты {groupId} не существует");
+                return;
             }
+            if (!room.PlayerState.ContainsKey(action.Actor))
+            {
+                Console.WriteLine($"Игрока {action.Actor} не существует");
+                return;
+            }
+            if (room.PlayerState[action.Actor].HP <= 0)
+                return;
+            
             var alreadyDefence = defenceActions[action.GroupId].Any(s => s.Actor == action.Actor);
             var alreadyAttack = attackActions[action.GroupId].Any(s => s.Actor == action.Actor);
 
@@ -54,8 +56,7 @@ namespace ServerSignalRFacePalm.Server
                 defenceActions[action.GroupId].Enqueue(action);
 
             int count = attackActions[action.GroupId].Count + defenceActions[action.GroupId].Count;
-            Console.WriteLine("Добавление действия и подсчет: " + count);
-            if (count == rooms[action.GroupId].PlayerState.Count(s=>s.Value.HP > 0))
+            if (count == room.PlayerState.Count(s=>s.Value.HP > 0))
             {
                 Console.WriteLine("Месилово!");
                 await PlayRoundAsync(action.GroupId, clients);
